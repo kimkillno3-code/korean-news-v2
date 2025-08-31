@@ -13,12 +13,11 @@ from difflib import SequenceMatcher
 class KoreanNewsClipping:
     def __init__(self):
         self.news_sources = {
-            "연합뉴스": "https://www.yonhapnews.co.kr/rss/politics.xml",
-            "한겨레": "https://www.hani.co.kr/rss/politics/",
-            "경향신문": "http://www.khan.co.kr/rss/rssdata/politics_list.xml",
+            "연합뉴스": "https://www.yna.co.kr/rss/news.xml",
             "SBS": "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01&plink=RSSREADER",
-            "KBS": "http://world.kbs.co.kr/rss/rss_news.htm?lang=k&id=Po",
-            "MBC": "https://imnews.imbc.com/rss/news/politics/rss.xml"
+            "MBC": "https://imnews.imbc.com/rss/google_news/narrativeNews.rss",
+            "JTBC": "https://fs.jtbc.co.kr//RSS/politics.xml",
+            "연합뉴스 영문": "https://en.yna.co.kr/RSS/news.xml"
         }
         
     def similarity(self, a, b):
@@ -247,8 +246,10 @@ class KoreanNewsClipping:
             return
         
         msg = MIMEMultipart('alternative')
-        timestamp = datetime.now().strftime('%Y.%m.%d %H:%M')
-        msg['Subject'] = f"한국 정치 뉴스 클리핑 - {timestamp}"
+        # Show both execution time and KST time for debugging
+        exec_timestamp = datetime.now().strftime('%Y.%m.%d %H:%M')
+        kst_time = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y.%m.%d %H:%M KST')
+        msg['Subject'] = f"한국 정치 뉴스 클리핑 - 실행시각: {exec_timestamp} | KST: {kst_time}"
         msg['From'] = sender_email
         msg['To'] = recipient_email
         

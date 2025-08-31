@@ -28,4 +28,9 @@ jobs:
         SENDER_EMAIL: ${{ secrets.NAVER_USER }}
         SENDER_PASSWORD: ${{ secrets.NAVER_PASS }}
         RECIPIENT_EMAIL: ${{ secrets.TO_EMAIL }}
-      run: python news_scraper.py
+      run: |
+        echo "Workflow started at: $(date)"
+        echo "UTC time: $(date -u)"
+        echo "TZ environment: $TZ"
+        python news_scraper.py
+        echo "Workflow completed at: $(date)"
