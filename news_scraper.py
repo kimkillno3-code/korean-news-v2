@@ -116,15 +116,15 @@ class KoreanNewsClipping:
                         }
                         source_news.append(news_item)
                         
-                        # 각 언론사에서 최대 3개까지만 수집
-                        if len(source_news) >= 3:
+                        # 각 언론사에서 최대 7개까지 수집 (중복 제거 후 5개 선택)
+                        if len(source_news) >= 7:
                             break
                 
-                # 중복 제거 후 2개 선택
+                # 중복 제거 후 5개 선택
                 unique_source_news = self.remove_duplicates(source_news)
-                balanced_news.extend(unique_source_news[:2])
+                balanced_news.extend(unique_source_news[:5])
                 
-                print(f"Added {len(unique_source_news[:2])} articles from {source_name}")
+                print(f"Added {len(unique_source_news[:5])} articles from {source_name}")
                 
             except Exception as e:
                 print(f"Error fetching from {source_name}: {e}")
