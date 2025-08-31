@@ -102,12 +102,18 @@ class KoreanNewsClipping:
                     
                     # 정치 뉴스인지 확인
                     if self.is_political_news(title, summary):
+                        # 요약 텍스트를 안전하게 처리
+                        clean_summary = self.clean_html(summary) if summary else ''
+                        # 요약이 너무 길면 자르고 말줄임표 추가
+                        if len(clean_summary) > 150:
+                            clean_summary = clean_summary[:150] + '...'
+                        
                         news_item = {
                             'source': source_name,
-                            'title': title,
+                            'title': self.clean_html(title),
                             'link': entry.link,
                             'published': entry.get('published', ''),
-                            'summary': summary[:200] + '...' if summary else ''
+                            'summary': clean_summary
                         }
                         source_news.append(news_item)
                         
@@ -128,8 +134,43 @@ class KoreanNewsClipping:
         return sorted(balanced_news, key=lambda x: x.get('published', ''), reverse=True)
 
     def clean_html(self, text):
+        if not text:
+            return ""
+        
+        # HTML 태그 제거
         clean = re.compile('<.*?>')
-        return re.sub(clean, '', text)
+        text = re.sub(clean, '', text)
+        
+        # HTML 엔티티 디코딩
+        import html
+        text = html.unescape(text)
+        
+        # 특수 문자와 공백 정리
+        text = re.sub(r'\s+', ' ', text)  # 여러 공백을 하나로
+        text = re.sub(r'[\r\n\t]', ' ', text)  # 줄바꿈, 탭을 공백으로
+        
+        # 특수 기호 제거 (박스, 화살표 등)
+        text = re.sub(r'[▲▼◆■□▶◀●○◇◈※★☆♠♣♥♦]', '', text)
+        
+        # 연속된 특수문자나 점들 정리
+        text = re.sub(r'\.{3,}', '...', text)  # 3개 이상의 점을 ...으로
+        text = re.sub(r'-{2,}', '--', text)    # 2개 이상의 대시를 --로
+        
+        return text.strip()
+    
+    def safe_html_text(self, text):
+        """HTML에 안전하게 삽입할 수 있도록 텍스트 처리"""
+        if not text:
+            return ""
+        
+        # 먼저 HTML 정리
+        text = self.clean_html(text)
+        
+        # HTML 특수문자 이스케이프
+        import html
+        text = html.escape(text)
+        
+        return text
     
     def convert_to_kst(self, timestamp_str):
         try:
@@ -251,11 +292,11 @@ class KoreanNewsClipping:
             html += f"""
                             <tr>
                                 <td style="padding: 12px; border: 2px solid #333; vertical-align: top; background-color: {bg_color}; font-weight: bold;">
-                                    <a href="{news['link']}" target="_blank" style="text-decoration: none; color: #333;">{self.clean_html(news['title'])}</a>
+                                    <a href="{news['link']}" target="_blank" style="text-decoration: none; color: #333;">{self.safe_html_text(news['title'])}</a>
                                 </td>
-                                <td style="padding: 12px; border: 2px solid #333; vertical-align: top; background-color: {bg_color}; color: #666; font-size: 14px; line-height: 1.4;">{self.clean_html(news['summary'])}</td>
+                                <td style="padding: 12px; border: 2px solid #333; vertical-align: top; background-color: {bg_color}; color: #666; font-size: 14px; line-height: 1.4;">{self.safe_html_text(news['summary'])}</td>
                                 <td style="padding: 12px; border: 2px solid #333; vertical-align: top; background-color: {bg_color};">
-                                    <span style="display: inline-block; background-color: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">{news['source']}</span>
+                                    <span style="display: inline-block; background-color: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">{self.safe_html_text(news['source'])}</span>
                                 </td>
                                 <td style="padding: 12px; border: 2px solid #333; vertical-align: top; background-color: {bg_color}; color: #6c757d; font-size: 12px;">{kst_time}</td>
                             </tr>
