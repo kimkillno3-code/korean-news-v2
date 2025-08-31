@@ -17,8 +17,7 @@ class KoreanNewsClipping:
             "SBS": "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01&plink=RSSREADER",
             "MBC": "https://imnews.imbc.com/rss/google_news/narrativeNews.rss",
             "JTBC": "https://fs.jtbc.co.kr//RSS/politics.xml",
-            "KBS": "http://world.kbs.co.kr/rss/rss_news.htm?lang=k&id=po",  # KBS 정치 RSS
-            "한겨레": "http://www.hani.co.kr/rss/politics/"  # 한겨레 정치 RSS
+            "KBS": "http://world.kbs.co.kr/rss/rss_news.htm?lang=k&id=po"  # KBS 정치 RSS
         }
         
         # 정치 관련 키워드 (포함되어야 할 키워드)
