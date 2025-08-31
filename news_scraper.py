@@ -13,15 +13,54 @@ from difflib import SequenceMatcher
 class KoreanNewsClipping:
     def __init__(self):
         self.news_sources = {
-            "연합뉴스": "https://www.yna.co.kr/rss/news.xml",
+            "연합뉴스": "https://www.yna.co.kr/rss/politics.xml",  # 정치 RSS로 변경
             "SBS": "https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01&plink=RSSREADER",
             "MBC": "https://imnews.imbc.com/rss/google_news/narrativeNews.rss",
             "JTBC": "https://fs.jtbc.co.kr//RSS/politics.xml",
-            "연합뉴스 영문": "https://en.yna.co.kr/RSS/news.xml"
+            "KBS": "http://world.kbs.co.kr/rss/rss_news.htm?lang=k&id=po",  # KBS 정치 RSS
+            "한겨레": "http://www.hani.co.kr/rss/politics/"  # 한겨레 정치 RSS
         }
+        
+        # 정치 관련 키워드 (포함되어야 할 키워드)
+        self.political_keywords = [
+            '정치', '국정감사', '국회', '의원', '대통령', '총리', '장관', '정부', '정당', 
+            '여당', '야당', '민주당', '국민의힘', '선거', '투표', '개헌', '법안', '정책',
+            '윤석열', '이재명', '한동훈', '조국', '안철수', '김건희', '국정농단',
+            '탄핵', '수사', '검찰', '정치인', '공직자', '청와대', '국무총리', '정치권',
+            '정치적', '정치인', '정치판', '정세', '정국', '정치현실', '정치적 갈등',
+            '대통령실', '여야', '협치', '정치개혁', '정치제도', '국정운영', '국정과제'
+        ]
+        
+        # 제외할 키워드 (이런 키워드가 있으면 제외)
+        self.exclude_keywords = [
+            'BTS', '방탄소년단', '블랙핑크', '트와이스', '아이유', '연예인', '배우', '가수',
+            '드라마', '영화', '예능', 'K-pop', '케이팝', '아이돌', '음악', '콘서트', '앨범',
+            '스포츠', '축구', '야구', '농구', '올림픽', '월드컵', '경기', '선수', '코치',
+            '날씨', '기상', '태풍', '지진', '화재', '교통사고', '사건사고', '부동산',
+            '집값', '아파트', '경제지표', '주식', '코스피', '환율', '금리', '증시',
+            '코로나', '백신', '의료', '병원', '질병', '치료', '보건', '의학',
+            '교육', '학교', '대학', '입시', '수능', '학생', '교사', '학원',
+            '문화', '축제', '전시', '박물관', '미술관', '도서', '책', '작가'
+        ]
         
     def similarity(self, a, b):
         return SequenceMatcher(None, a, b).ratio()
+    
+    def is_political_news(self, title, summary):
+        """제목과 요약을 바탕으로 정치 뉴스인지 판단"""
+        text = (title + ' ' + summary).lower()
+        
+        # 제외 키워드가 있으면 정치 뉴스가 아님
+        for exclude_word in self.exclude_keywords:
+            if exclude_word.lower() in text:
+                return False
+        
+        # 정치 키워드가 있으면 정치 뉴스
+        for political_word in self.political_keywords:
+            if political_word.lower() in text:
+                return True
+        
+        return False
     
     def remove_duplicates(self, news_list):
         unique_news = []
@@ -55,17 +94,26 @@ class KoreanNewsClipping:
                     print(f"No entries found for {source_name}")
                     continue
                     
-                # 각 언론사에서 2개씩 수집
+                # 각 언론사에서 정치 뉴스만 필터링하여 수집
                 source_news = []
-                for entry in feed.entries[:5]:  # 상위 5개 중에서 선택
-                    news_item = {
-                        'source': source_name,
-                        'title': entry.title,
-                        'link': entry.link,
-                        'published': entry.get('published', ''),
-                        'summary': entry.get('summary', '')[:200] + '...' if entry.get('summary') else ''
-                    }
-                    source_news.append(news_item)
+                for entry in feed.entries[:10]:  # 더 많은 기사를 확인
+                    title = entry.title
+                    summary = entry.get('summary', '')
+                    
+                    # 정치 뉴스인지 확인
+                    if self.is_political_news(title, summary):
+                        news_item = {
+                            'source': source_name,
+                            'title': title,
+                            'link': entry.link,
+                            'published': entry.get('published', ''),
+                            'summary': summary[:200] + '...' if summary else ''
+                        }
+                        source_news.append(news_item)
+                        
+                        # 각 언론사에서 최대 3개까지만 수집
+                        if len(source_news) >= 3:
+                            break
                 
                 # 중복 제거 후 2개 선택
                 unique_source_news = self.remove_duplicates(source_news)
