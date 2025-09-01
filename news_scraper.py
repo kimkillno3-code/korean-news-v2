@@ -95,7 +95,7 @@ class KoreanNewsClipping:
                     
                 # 각 언론사에서 정치 뉴스만 필터링하여 수집
                 source_news = []
-                for entry in feed.entries[:10]:  # 더 많은 기사를 확인
+                for entry in feed.entries:  # 모든 기사를 확인 (개수 제한 제거)
                     title = entry.title
                     summary = entry.get('summary', '')
                     
@@ -116,15 +116,14 @@ class KoreanNewsClipping:
                         }
                         source_news.append(news_item)
                         
-                        # 각 언론사에서 최대 7개까지 수집 (중복 제거 후 5개 선택)
-                        if len(source_news) >= 7:
+                        # 각 언론사에서 정확히 5개 수집하면 중단
+                        if len(source_news) >= 5:
                             break
                 
-                # 중복 제거 후 5개 선택
-                unique_source_news = self.remove_duplicates(source_news)
-                balanced_news.extend(unique_source_news[:5])
+                # 중복 제거는 하지 않고 바로 추가 (이미 5개로 제한됨)
+                balanced_news.extend(source_news)
                 
-                print(f"Added {len(unique_source_news[:5])} articles from {source_name}")
+                print(f"Added {len(source_news)} articles from {source_name}")
                 
             except Exception as e:
                 print(f"Error fetching from {source_name}: {e}")
