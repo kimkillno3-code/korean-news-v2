@@ -189,7 +189,17 @@ class KoreanNewsClipping:
             return datetime.now(pytz.timezone('Asia/Seoul')).strftime('%m-%d %H:%M')
 
     def create_html_email(self, news_list):
-        today = datetime.now().strftime("%Y년 %m월 %d일")
+        kst_now = datetime.now(pytz.timezone('Asia/Seoul'))
+        today = kst_now.strftime("%Y년 %m월 %d일")
+        current_hour = kst_now.hour
+        
+        # 시간대별 구분
+        if 7 <= current_hour <= 11:
+            time_label = "아침"
+        elif 14 <= current_hour <= 17:
+            time_label = "오후"
+        else:
+            time_label = "특별"
         
         html = f"""
         <html>
@@ -267,7 +277,7 @@ class KoreanNewsClipping:
             <body>
                 <div class="container">
                     <div class="header">
-                        <h2>🗞️ 한국 정치 뉴스 클리핑</h2>
+                        <h2>🗞️ 한국 정치 뉴스 클리핑 [{time_label}]</h2>
                         <p>{today} | 총 {len(news_list)}개 기사</p>
                     </div>
                     
@@ -305,7 +315,7 @@ class KoreanNewsClipping:
                     </table>
                     
                     <div class="footer">
-                        📧 한국 정치 뉴스 자동 클리핑 시스템 | 매일 오전 9시 발송<br>
+                        📧 한국 정치 뉴스 자동 클리핑 시스템 | 매일 오전 8시, 오후 3시 발송<br>
                         🤖 Generated with Claude Code
                     </div>
                 </div>
@@ -333,10 +343,20 @@ class KoreanNewsClipping:
             return
         
         msg = MIMEMultipart('alternative')
-        # Show both execution time and KST time for debugging
-        exec_timestamp = datetime.now().strftime('%Y.%m.%d %H:%M')
-        kst_time = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y.%m.%d %H:%M KST')
-        msg['Subject'] = f"한국 정치 뉴스 클리핑 - 실행시각: {exec_timestamp} | KST: {kst_time}"
+        # KST 시간 기준으로 제목 구성
+        kst_now = datetime.now(pytz.timezone('Asia/Seoul'))
+        kst_time = kst_now.strftime('%Y.%m.%d %H:%M KST')
+        current_hour = kst_now.hour
+        
+        # 시간대별 구분
+        if 7 <= current_hour <= 11:
+            time_label = "아침"
+        elif 14 <= current_hour <= 17:
+            time_label = "오후"
+        else:
+            time_label = "특별"
+            
+        msg['Subject'] = f"한국 정치 뉴스 클리핑 [{time_label}] - {kst_time}"
         msg['From'] = sender_email
         msg['To'] = recipient_email
         
