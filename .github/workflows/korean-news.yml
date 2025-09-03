@@ -3,7 +3,7 @@ name: Korean News Clipper
 on:
   schedule:
     - cron: '0 23 * * *'  # UTC 23:00 = KST 08:00 (Daily at 8AM KST)
-    - cron: '0 6 * * *'   # UTC 06:00 = KST 15:00 (Daily at 3PM KST)
+    - cron: '0 6 * * *'   # UTC 06:00 = KST 15:00 (Daily at 3PM KST)  
   workflow_dispatch:
 
 jobs:
