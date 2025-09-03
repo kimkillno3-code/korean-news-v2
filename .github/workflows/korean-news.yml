@@ -2,36 +2,52 @@ name: Korean News Clipper
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # UTC 23:00 = KST 08:00 (Daily at 8AM KST)
-    - cron: '0 6 * * *'   # UTC 06:00 = KST 15:00 (Daily at 3PM KST)  
+    - cron: '0 23 * * *'  # UTC 23:00 = KST 08:00
+    - cron: '0 6 * * *'   # UTC 06:00 = KST 15:00
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   send-news:
+    # 스케줄 실행 시, 위 두 크론일 때만 동작 (다른 워크플로/옛 스케줄 방지)
+    if: ${{ github.event_name != 'schedule' || github.event.schedule == '0 23 * * *' || github.event.schedule == '0 6 * * *' }}
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
+    concurrency:
+      group: korean-news
+      cancel-in-progress: false
+    env:
+      TZ: Asia/Seoul  # 로그 KST 표기
+
     steps:
-    - uses: actions/checkout@v4
-      
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Send news
-      env:
-        SMTP_SERVER: ${{ secrets.NAVER_SERVER }}
-        SMTP_PORT: ${{ secrets.NAVER_PORT }}
-        SENDER_EMAIL: ${{ secrets.NAVER_USER }}
-        SENDER_PASSWORD: ${{ secrets.NAVER_PASS }}
-        RECIPIENT_EMAIL: ${{ secrets.TO_EMAIL }}
-      run: |
-        echo "Workflow started at: $(date)"
-        echo "UTC time: $(date -u)"
-        echo "TZ environment: $TZ"
-        python news_scraper.py
-        echo "Workflow completed at: $(date)"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify required envs
+        run: |
+          for v in SMTP_SERVER SMTP_PORT SENDER_EMAIL SENDER_PASSWORD RECIPIENT_EMAIL; do
+            test -n "${!v:-}" && echo "$v set" || { echo "::error::$v is empty"; exit 1; }
+          done
+
+      - name: Send news
+        env:
+          SMTP_SERVER: ${{ secrets.NAVER_SERVER }}   # smtp.naver.com
+          SMTP_PORT: ${{ secrets.NAVER_PORT }}       # 587(STARTTLS) 권장
+          SENDER_EMAIL: ${{ secrets.NAVER_USER }}
+          SENDER_PASSWORD: ${{ secrets.NAVER_PASS }}
+          RECIPIENT_EMAIL: ${{ secrets.TO_EMAIL }}
+        run: |
+          echo "Workflow started at: $(date)"
+          echo "UTC time: $(date -u)"
+          python news_scraper.py
+          echo "Workflow completed at: $(date)"
